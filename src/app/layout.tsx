@@ -1,8 +1,20 @@
 import type { Metadata, Viewport } from "next";
-import { Cairo } from "next/font/google";
+import { Epilogue, IBM_Plex_Mono } from "next/font/google";
 import "./globals.css";
 
-const sans = Cairo({ subsets: ["latin"], weight: ["300", "400", "600", "700", "800"], display: "swap", variable: "--font-sans" });
+const epilogue = Epilogue({
+  subsets: ["latin"],
+  weight: ["400", "600", "700"],
+  display: "swap",
+  variable: "--font-sans",
+});
+
+const mono = IBM_Plex_Mono({
+  subsets: ["latin"],
+  weight: ["400", "500"],
+  display: "swap",
+  variable: "--font-mono",
+});
 
 const deskripsi = "Platform adopsi hewan terlantar dengan penilaian kelayakan calon pengadopsi.";
 
@@ -14,10 +26,14 @@ export const metadata: Metadata = {
 };
 
 export const viewport: Viewport = {
-  themeColor: [{ media: "(prefers-color-scheme: light)", color: "#219f9b" }, { media: "(prefers-color-scheme: dark)", color: "#0d1918" }],
-  colorScheme: "light dark",
+  themeColor: "#fcfcfb",
+  colorScheme: "light",
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
-  return (<html lang="id" className={sans.variable}><body>{children}</body></html>);
+  return (
+    <html lang="id" className={`${epilogue.variable} ${mono.variable}`}>
+      <body>{children}</body>
+    </html>
+  );
 }

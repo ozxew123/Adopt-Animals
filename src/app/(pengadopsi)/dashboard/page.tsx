@@ -35,8 +35,21 @@ export default async function Dashboard({ searchParams }: { searchParams: Promis
         <tbody>
           {daftar.length === 0 && <tr><td colSpan={6}>Belum ada pengajuan. Pilih hewan di katalog untuk memulai.</td></tr>}
           {daftar.map((p) => (
-            <tr key={p.id}><td><b>{kode(p.id)}</b></td><td>{p.hewan.namaHewan}</td><td>{tanggal(p.tanggalPengajuan)}</td><td><b>{p.totalSkor}</b></td>
-              <td><Badge teks={labelStatus[p.statusPengajuan]} /></td><td><Link className="btn sm out" href={`/dashboard?lihat=${p.id}`}>Lihat rincian</Link></td></tr>
+            <tr key={p.id}>
+              <td><b>{kode(p.id)}</b></td>
+              <td>{p.hewan.namaHewan}</td>
+              <td>{tanggal(p.tanggalPengajuan)}</td>
+              <td><b>{p.totalSkor}</b></td>
+              <td><Badge teks={labelStatus[p.statusPengajuan]} /></td>
+              <td>
+                <div className="inl" style={{ gap: 6 }}>
+                  <Link className="btn sm out" href={`/dashboard?lihat=${p.id}`}>Lihat rincian</Link>
+                  <Link className="btn sm out" href={`/pengajuan/${p.id}/cetak`} target="_blank" title="Cetak Lembar Resmi PDF">
+                    <Ikon nama="printer" /> Cetak
+                  </Link>
+                </div>
+              </td>
+            </tr>
           ))}
         </tbody>
       </table></div>
@@ -44,7 +57,13 @@ export default async function Dashboard({ searchParams }: { searchParams: Promis
         <section className="card lembar" style={{ marginTop: 20 }} aria-labelledby="jdl-lembar">
           <div className="lembar-h">
             <h3 id="jdl-lembar">Lembar Hasil Penilaian {kode(lembar.id)}: {lembar.hewan.namaHewan}</h3>
-            <Badge teks={labelStatus[lembar.statusPengajuan]} />
+            <div className="inl" style={{ gap: 10 }}>
+              <Badge teks={labelStatus[lembar.statusPengajuan]} />
+              <Link className="btn sm" href={`/pengajuan/${lembar.id}/cetak`} target="_blank">
+                <Ikon nama="printer" />
+                Cetak Lembar Resmi (PDF)
+              </Link>
+            </div>
           </div>
           <div className="skor"><b>{lembar.totalSkor}</b><span>Total skor</span></div>
           <Rincian detail={lembar.detail} />

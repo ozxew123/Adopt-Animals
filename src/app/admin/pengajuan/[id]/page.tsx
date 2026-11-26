@@ -15,9 +15,23 @@ export default async function DetailPengajuan({ params }: { params: Promise<{ id
   if (!p) notFound();
   return (
     <>
-      <Link className="back" href="/admin/dashboard"><Ikon nama="arrow-left" />Kembali ke antrean</Link>
-      <h1>Detail Pengajuan {kode(p.id)}</h1>
-      <p className="sub">Tanggal pengajuan {tanggal(p.tanggalPengajuan)}</p>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", flexWrap: "wrap", gap: 12, marginBottom: 16 }}>
+        <div>
+          <Link className="back" href="/admin/dashboard"><Ikon nama="arrow-left" />Kembali ke antrean</Link>
+          <h1 style={{ marginTop: 8 }}>Detail Pengajuan {kode(p.id)}</h1>
+          <p className="sub">Tanggal pengajuan {tanggal(p.tanggalPengajuan)}</p>
+        </div>
+        <Link
+          href={`/pengajuan/${p.id}/cetak`}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="btn sm out"
+          style={{ textDecoration: "none", marginTop: 12 }}
+        >
+          <Ikon nama="printer" />
+          <span>Cetak Lembar Penilaian</span>
+        </Link>
+      </div>
       <div className="split rev">
         <div className="stack">
           <div className="card"><h3>Profil pengadopsi</h3>
