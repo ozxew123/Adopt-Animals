@@ -3,8 +3,9 @@ generator client {
 }
 
 datasource db {
-  provider = "postgresql"
-  url      = env("DATABASE_URL")
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DATABASE_URL_UNPOOLED")
 }
 
 enum Role {
@@ -112,12 +113,4 @@ model DetailPenilaian {
   poin        Int             // salinan nilai_poin saat dikirim (tambahan di luar ERD, agar rincian tetap cocok dengan total_skor)
   @@index([pengajuanId])
   @@map("detail_penilaian")
-}
-
-// Tabel tambahan di luar ERD: menyimpan ambang batas yang bisa diubah admin
-model PengaturanScoring {
-  id         Int @id @default(1)
-  batasLolos Int @default(80) @map("batas_lolos")
-  batasTolak Int @default(50) @map("batas_tolak")
-  @@map("pengaturan_scoring")
 }

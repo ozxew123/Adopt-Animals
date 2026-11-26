@@ -1,13 +1,12 @@
-import { PrismaClient } from "@prisma/client";
+import "dotenv/config";
 import bcrypt from "bcryptjs";
-import { statusAwal } from "../src/features/pengajuan/scoring";
+import { db } from "../src/server/core/Database";
+import { scoringEngine } from "../src/shared/scoring";
 
-const prisma = new PrismaClient();
-const batas = { batasLolos: 80, batasTolak: 50 };
+const prisma = db.client;
 
 async function main() {
   const hash = (p: string) => bcrypt.hashSync(p, 10);
-  await prisma.pengaturanScoring.upsert({ where: { id: 1 }, update: {}, create: { id: 1, ...batas } });
 
   const u = (namaLengkap: string, email: string, pw: string, noTelp: string, alamat: string, role: "ADMIN" | "PENGADOPSI" = "PENGADOPSI") =>
     prisma.pengguna.upsert({ where: { email }, update: {}, create: { namaLengkap, email, password: hash(pw), noTelp, alamat, role } });
@@ -67,7 +66,7 @@ const kriteria: KriteriaSeed[] = [];
     await prisma.pengajuanAdopsi.create({
       data: {
         penggunaId, hewanId: hewan[nama], totalSkor: total, detail: { create: detail },
-        statusPengajuan: final ? "DISETUJUI" : statusAwal(total, batas), ...(final ? { tanggalKeputusan: new Date() } : {}),
+        statusPengajuan: final ? "DISETUJUI" : scoringEngine.statusAwal(total), ...(final ? { tanggalKeputusan: new Date() } : {}),
       },
     });
   }

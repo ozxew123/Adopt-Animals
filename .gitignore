@@ -1,6 +1,9 @@
 node_modules
-.next
+dist
 .env
 public/uploads
 *.tsbuildinfo
-next-env.d.ts
+.neon
+.agents/
+skills-lock.json
+TUGAS SBD M3- Kel 5.pdf

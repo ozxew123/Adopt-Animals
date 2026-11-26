@@ -88,15 +88,6 @@ CREATE TABLE "detail_penilaian" (
     CONSTRAINT "detail_penilaian_pkey" PRIMARY KEY ("id_detail")
 );
 
--- CreateTable
-CREATE TABLE "pengaturan_scoring" (
-    "id" INTEGER NOT NULL DEFAULT 1,
-    "batas_lolos" INTEGER NOT NULL DEFAULT 80,
-    "batas_tolak" INTEGER NOT NULL DEFAULT 50,
-
-    CONSTRAINT "pengaturan_scoring_pkey" PRIMARY KEY ("id")
-);
-
 -- CreateIndex
 CREATE UNIQUE INDEX "pengguna_email_key" ON "pengguna"("email");
 
