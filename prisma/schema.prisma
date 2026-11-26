@@ -1,0 +1,123 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  PENGADOPSI
+  ADMIN
+}
+
+enum StatusHewan {
+  TERSEDIA
+  TERADOPSI
+}
+
+enum JenisKelamin {
+  JANTAN
+  BETINA
+}
+
+enum StatusPengajuan {
+  MENUNGGU_REVIEW
+  LOLOS_KUALIFIKASI
+  DISETUJUI
+  DITOLAK
+}
+
+// Nama tabel dan kolom di database mengikuti ERD/PRD Kelompok 5 (lewat @map)
+
+model Pengguna {
+  id          Int               @id @default(autoincrement()) @map("id_pengguna")
+  namaLengkap String            @map("nama_lengkap") @db.VarChar(150)
+  email       String            @unique @db.VarChar(150)
+  password    String            @db.VarChar(255) // hash bcrypt
+  noTelp      String?           @map("no_telp") @db.VarChar(30)
+  alamat      String?
+  role        Role              @default(PENGADOPSI)
+  pengajuan   PengajuanAdopsi[]
+  @@map("pengguna")
+}
+
+model KategoriHewan {
+  id           Int     @id @default(autoincrement()) @map("id_kategori")
+  namaKategori String  @unique @map("nama_kategori") @db.VarChar(100)
+  hewan        Hewan[]
+  @@map("kategori_hewan")
+}
+
+model Hewan {
+  id           Int               @id @default(autoincrement()) @map("id_hewan")
+  kategoriId   Int               @map("id_kategori")
+  kategori     KategoriHewan     @relation(fields: [kategoriId], references: [id])
+  namaHewan    String            @map("nama_hewan") @db.VarChar(100)
+  jenisKelamin JenisKelamin      @map("jenis_kelamin")
+  umurBulan    Int               @map("umur_bulan")
+  statusAdopsi StatusHewan       @default(TERSEDIA) @map("status_adopsi")
+  fotoHewan    String?           @map("foto_hewan")  // kolom opsional (catatan PRD bagian 5)
+  deskripsi    String?                                // kolom opsional (catatan PRD bagian 5)
+  pengajuan    PengajuanAdopsi[]
+  @@index([kategoriId])
+  @@map("hewan")
+}
+
+model KriteriaScoring {
+  id           Int               @id @default(autoincrement()) @map("id_kriteria")
+  namaKriteria String            @map("nama_kriteria") @db.VarChar(100)
+  urutan       Int               @default(0)
+  opsi         OpsiKriteria[]
+  detail       DetailPenilaian[]
+  @@map("kriteria_scoring")
+}
+
+model OpsiKriteria {
+  id                Int               @id @default(autoincrement()) @map("id_opsi")
+  kriteriaId        Int               @map("id_kriteria")
+  kriteria          KriteriaScoring   @relation(fields: [kriteriaId], references: [id], onDelete: Cascade)
+  keteranganJawaban String            @map("keterangan_jawaban")
+  nilaiPoin         Int               @map("nilai_poin")
+  detail            DetailPenilaian[]
+  @@index([kriteriaId])
+  @@map("opsi_kriteria")
+}
+
+model PengajuanAdopsi {
+  id               Int               @id @default(autoincrement()) @map("id_pengajuan")
+  penggunaId       Int               @map("id_pengguna")
+  pengguna         Pengguna          @relation(fields: [penggunaId], references: [id])
+  hewanId          Int               @map("id_hewan")
+  hewan            Hewan             @relation(fields: [hewanId], references: [id])
+  tanggalPengajuan DateTime          @default(now()) @map("tanggal_pengajuan")
+  totalSkor        Int               @map("total_skor")          // dibekukan saat pengajuan dikirim
+  statusPengajuan  StatusPengajuan   @default(MENUNGGU_REVIEW) @map("status_pengajuan")
+  tanggalKeputusan DateTime?         @map("tanggal_keputusan")   // terisi saat admin memutuskan; null = belum diputuskan
+  detail           DetailPenilaian[]
+  @@index([penggunaId])
+  @@index([hewanId, tanggalKeputusan])
+  @@map("pengajuan_adopsi")
+}
+
+model DetailPenilaian {
+  id          Int             @id @default(autoincrement()) @map("id_detail")
+  pengajuanId Int             @map("id_pengajuan")
+  pengajuan   PengajuanAdopsi @relation(fields: [pengajuanId], references: [id], onDelete: Cascade)
+  kriteriaId  Int             @map("id_kriteria")
+  kriteria    KriteriaScoring @relation(fields: [kriteriaId], references: [id])
+  opsiId      Int             @map("id_opsi")
+  opsi        OpsiKriteria    @relation(fields: [opsiId], references: [id])
+  poin        Int             // salinan nilai_poin saat dikirim (tambahan di luar ERD, agar rincian tetap cocok dengan total_skor)
+  @@index([pengajuanId])
+  @@map("detail_penilaian")
+}
+
+// Tabel tambahan di luar ERD: menyimpan ambang batas yang bisa diubah admin
+model PengaturanScoring {
+  id         Int @id @default(1)
+  batasLolos Int @default(80) @map("batas_lolos")
+  batasTolak Int @default(50) @map("batas_tolak")
+  @@map("pengaturan_scoring")
+}
