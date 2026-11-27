@@ -1,5 +1,5 @@
 import { createContext, useCallback, useContext, useEffect, useState, type ReactNode } from "react";
-import { Navigate, useLocation } from "react-router-dom";
+import { Link, Navigate, useLocation, useNavigate } from "react-router-dom";
 import { authApi } from "@/client/services";
 import type { AuthUser, Role } from "@/client/services/AuthApiService";
 
@@ -60,11 +60,46 @@ export function RequireLogin({ children }: { children: ReactNode }) {
   return <>{children}</>;
 }
 
+// Tombol untuk berpindah akun: keluar dari sesi saat ini, lalu menuju halaman login.
+// Tidak butuh endpoint/tabel baru karena memakai logout() yang sudah ada.
+export function GantiAkunButton({ className = "btn sm out", children }: { className?: string; children?: ReactNode }) {
+  const { logout } = useAuth();
+  const navigate = useNavigate();
+  const [busy, setBusy] = useState(false);
+
+  async function handleClick() {
+    setBusy(true);
+    await logout();
+    navigate("/login");
+  }
+
+  return (
+    <button type="button" className={className} disabled={busy} onClick={handleClick}>
+      {busy ? "Memproses..." : children ?? "Keluar & masuk sebagai pengadopsi"}
+    </button>
+  );
+}
+
 export function RequirePengadopsi({ children }: { children: ReactNode }) {
   const { user, loading } = useAuth();
   if (loading) return <div className="wrap"><p className="note">Memuat sesi...</p></div>;
   if (!user) return <Navigate to="/login" replace />;
-  if (user.role !== "PENGADOPSI") return <Navigate to="/" replace />;
+  if (user.role !== "PENGADOPSI") {
+    // Admin tidak lagi dilempar diam-diam ke beranda; dijelaskan dan diberi jalan keluar.
+    return (
+      <div className="card empty">
+        <h2>Halaman ini khusus pengadopsi</h2>
+        <p className="note">
+          Kamu sedang masuk sebagai admin, jadi tidak bisa mengajukan adopsi atau membuka dashboard pengadopsi.
+          Untuk mengajukan adopsi, keluar lalu masuk dengan akun pengadopsi.
+        </p>
+        <div className="inl" style={{ justifyContent: "center" }}>
+          <GantiAkunButton className="btn sm" />
+          <Link className="btn sm out" to="/admin/dashboard">Kembali ke Portal Admin</Link>
+        </div>
+      </div>
+    );
+  }
   return <>{children}</>;
 }
 

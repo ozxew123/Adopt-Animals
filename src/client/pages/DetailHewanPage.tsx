@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { Link, useParams } from "react-router-dom";
-import { useAuth } from "@/client/lib/auth";
+import { GantiAkunButton, useAuth } from "@/client/lib/auth";
 import { katalogApi } from "@/client/services";
 import { Badge } from "@/client/components/ui/Badge";
 import { Foto } from "@/client/components/ui/Foto";
@@ -62,7 +62,12 @@ export function DetailHewanPage() {
           </dl>
           <p>{hewan.deskripsi ?? "Belum ada deskripsi untuk hewan ini."}</p>
           {hewan.statusAdopsi === "TERADOPSI" ? <span className="btn lg dis">Sudah Teradopsi</span>
-            : user?.role === "ADMIN" ? <p className="note">Masuk sebagai pengadopsi untuk mengajukan adopsi.</p>
+            : user?.role === "ADMIN" ? (
+              <div>
+                <p className="note">Kamu masuk sebagai admin. Pengajuan adopsi hanya bisa dilakukan dengan akun pengadopsi.</p>
+                <GantiAkunButton className="btn lg out" />
+              </div>
+            )
             : diajukan ? <span className="btn lg dis">Sudah Diajukan</span>
             : <Link className="btn lg cta" to={user ? `/adopsi/ajukan/${hewan.id}` : "/login"}>Ajukan Adopsi</Link>}
         </div>

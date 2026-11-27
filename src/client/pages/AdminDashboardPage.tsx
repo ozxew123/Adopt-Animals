@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import { adminApi, ApiError } from "@/client/services";
-import type { AdminDashboardResponse } from "@/client/services/AdminApiService";
+import type { AdminDashboardResponse, AntreanItem } from "@/client/services/AdminApiService";
 import { Badge } from "@/client/components/ui/Badge";
 import { Ikon } from "@/client/components/ui/Ikon";
 import { Notice } from "@/client/components/ui/Notice";
@@ -29,21 +29,17 @@ export function AdminDashboardPage() {
     load().finally(() => setLoading(false));
   }, [load]);
 
-  const pelamarGanda = useMemo(() => {
-    if (!data) return { byHewan: new Map<number, number>(), list: [] as { hewanId: number; namaHewan: string; jumlah: number }[] };
-    const counts = new Map<number, { namaHewan: string; jumlah: number }>();
-    for (const p of data.antrean) {
-      const curr = counts.get(p.hewanId);
-      if (curr) curr.jumlah += 1;
-      else counts.set(p.hewanId, { namaHewan: p.hewan.namaHewan, jumlah: 1 });
-    }
+  // Pelamar bersaing = pengajuan yang belum diputuskan untuk hewan yang sama.
+  // Hanya ini yang ikut ditolak otomatis saat salah satu disetujui.
+  const bersaing = useMemo(() => {
     const byHewan = new Map<number, number>();
-    const list: { hewanId: number; namaHewan: string; jumlah: number }[] = [];
-    for (const [hewanId, info] of counts.entries()) {
-      byHewan.set(hewanId, info.jumlah);
-      if (info.jumlah > 1) list.push({ hewanId, ...info });
+    for (const p of data?.antrean ?? []) {
+      if (p.tanggalKeputusan !== null) continue;
+      byHewan.set(p.hewanId, (byHewan.get(p.hewanId) ?? 0) + 1);
     }
-    return { byHewan, list };
+    let jumlahHewan = 0;
+    for (const jumlah of byHewan.values()) if (jumlah > 1) jumlahHewan += 1;
+    return { byHewan, jumlahHewan };
   }, [data]);
 
   async function putuskan(id: number, keputusan: "DISETUJUI" | "DITOLAK") {
@@ -61,6 +57,15 @@ export function AdminDashboardPage() {
     }
   }
 
+  function setujui(p: AntreanItem) {
+    const lain = (bersaing.byHewan.get(p.hewanId) ?? 1) - 1;
+    const pesan =
+      `Setujui adopsi ${p.hewan.namaHewan} oleh ${p.pengguna.namaLengkap}?\n\n` +
+      `Status ${p.hewan.namaHewan} akan menjadi Teradopsi` +
+      (lain > 0 ? ` dan ${lain} pengajuan lain yang belum diputuskan ditolak otomatis.` : ".");
+    if (window.confirm(pesan)) void putuskan(p.id, "DISETUJUI");
+  }
+
   return (
     <>
       <h1>Antrean Seleksi</h1>
@@ -72,21 +77,12 @@ export function AdminDashboardPage() {
         <div className="card statc"><span className="si"><Ikon nama="check" /></span><div className="stat">{data?.ringkas.teradopsi ?? 0}<small>Hewan teradopsi</small></div></div>
       </div>
 
-      {pelamarGanda.list.length > 0 && (
-        <div className="card compare-bar" aria-label="Bandingkan pengajuan hewan yang sama">
-          <div className="inl" style={{ justifyContent: "space-between", width: "100%" }}>
-            <div>
-              <b>Hewan dengan lebih dari 1 pelamar:</b>{" "}
-              <span className="note" style={{ margin: 0 }}>Bandingkan jawaban dan skor kandidat secara berdampingan.</span>
-            </div>
-            <div className="inl">
-              {pelamarGanda.list.map((item) => (
-                <Link key={item.hewanId} className="btn sm out" to={`/admin/compare/${item.hewanId}`}>
-                  Bandingkan {item.namaHewan} ({item.jumlah})
-                </Link>
-              ))}
-            </div>
-          </div>
+      {bersaing.jumlahHewan > 0 && (
+        <div className="card compare-bar" role="note">
+          <b>{bersaing.jumlahHewan} hewan punya lebih dari 1 pelamar yang belum diputuskan.</b>{" "}
+          <span className="note" style={{ margin: 0 }}>
+            Untuk hewan tersebut, keputusan diambil lewat halaman Bandingkan supaya semua kandidat terlihat berdampingan.
+          </span>
         </div>
       )}
 
@@ -103,16 +99,17 @@ export function AdminDashboardPage() {
               {data.antrean.map((p) => {
                 const k = kategoriOtomatis(p.totalSkor, data.batas);
                 const selesai = p.tanggalKeputusan !== null;
-                const jumlahPelamar = pelamarGanda.byHewan.get(p.hewanId) ?? 1;
+                const jumlahBersaing = bersaing.byHewan.get(p.hewanId) ?? 0;
+                const bersainganAktif = !selesai && jumlahBersaing > 1;
                 return (
                   <tr key={p.id} className={KELAS[warnaRekomendasi(k)]}>
                     <td><Link to={`/admin/pengajuan/${p.id}`}>{p.pengguna.namaLengkap}</Link></td>
                     <td>
                       <div className="inl">
                         <span>{p.hewan.namaHewan}</span>
-                        {jumlahPelamar > 1 && (
+                        {bersainganAktif && (
                           <Link className="compare-link" to={`/admin/compare/${p.hewanId}`}>
-                            Bandingkan ({jumlahPelamar})
+                            {jumlahBersaing} pelamar bersaing
                           </Link>
                         )}
                       </div>
@@ -126,9 +123,11 @@ export function AdminDashboardPage() {
                         <span className="note">Selesai</span>
                       ) : p.statusPengajuan === "DITOLAK" ? (
                         <Link className="btn sm out" to={`/admin/pengajuan/${p.id}`}>Tinjau</Link>
+                      ) : bersainganAktif ? (
+                        <Link className="btn sm" to={`/admin/compare/${p.hewanId}`}>Bandingkan &amp; putuskan</Link>
                       ) : (
                         <div className="inl">
-                          <button type="button" className="btn sm" disabled={busyId === p.id} onClick={() => putuskan(p.id, "DISETUJUI")}>Setujui</button>
+                          <button type="button" className="btn sm" disabled={busyId === p.id} onClick={() => setujui(p)}>Setujui</button>
                           <button type="button" className="btn sm red" disabled={busyId === p.id} onClick={() => putuskan(p.id, "DITOLAK")}>Tolak</button>
                         </div>
                       )}

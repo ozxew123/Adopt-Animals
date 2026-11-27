@@ -48,6 +48,16 @@ export function AdminComparePage() {
     }
   }
 
+  function setujui(p: CompareResponse["pengajuan"][number]) {
+    const lain = (data?.pengajuan ?? []).filter((x) => x.tanggalKeputusan === null && x.id !== p.id).length;
+    const nama = data?.hewan.namaHewan ?? "hewan ini";
+    const pesan =
+      `Setujui adopsi ${nama} oleh ${p.pengguna.namaLengkap}?\n\n` +
+      `Status ${nama} akan menjadi Teradopsi` +
+      (lain > 0 ? ` dan ${lain} pengajuan lain yang belum diputuskan ditolak otomatis.` : ".");
+    if (window.confirm(pesan)) void handlePutuskan(p.id, "DISETUJUI");
+  }
+
   if (loading) return <Skeleton tinggi={360} />;
   if (notFound || !data) return <NotFoundPage />;
 
@@ -169,7 +179,7 @@ export function AdminComparePage() {
                           type="button"
                           className="btn sm"
                           disabled={busyId === p.id}
-                          onClick={() => handlePutuskan(p.id, "DISETUJUI")}
+                          onClick={() => setujui(p)}
                         >
                           Setujui
                         </button>

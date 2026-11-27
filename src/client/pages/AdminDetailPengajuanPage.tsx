@@ -47,6 +47,12 @@ export function AdminDetailPengajuanPage() {
 
   async function putuskan(keputusan: "DISETUJUI" | "DITOLAK") {
     if (!p) return;
+    if (keputusan === "DISETUJUI") {
+      const pesan =
+        `Setujui adopsi ${p.hewan.namaHewan} oleh ${p.pengguna.namaLengkap}?\n\n` +
+        `Status ${p.hewan.namaHewan} akan menjadi Teradopsi dan pengajuan lain yang belum diputuskan untuk hewan ini ditolak otomatis.`;
+      if (!window.confirm(pesan)) return;
+    }
     setErr(null);
     setBusy(true);
     try {

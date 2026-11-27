@@ -8,6 +8,7 @@ Vite + React 19 + TypeScript + Hono + Prisma 6 + Neon PostgreSQL.
 cp .env.example .env          # isi DATABASE_URL Neon dan AUTH_SECRET
 npm install
 npx prisma migrate deploy     # atau npx prisma migrate dev --name init
+npx prisma generate
 npm run db:seed
 npm run dev                   # Vite (http://localhost:5173) + Hono API (http://localhost:3001)
 npm test                      # uji logika scoring
